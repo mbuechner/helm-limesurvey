@@ -1,0 +1,55 @@
+{{- /* OpenShift BuildConfigs for nginx and php-fpm */ -}}
+{{- if .Values.openshift.enabled }}
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: {{ include "limesurvey.fullname" . }}-nginx
+  labels:
+    app: {{ include "limesurvey.fullname" . }}
+spec:
+  runPolicy: Serial
+  source:
+    type: Git
+    git:
+      uri: {{ .Values.openshift.sourceRepo | quote }}
+      ref: {{ default .Chart.Version .Values.openshift.sourceRef | quote }}
+    contextDir: images/nginx
+  strategy:
+    type: Docker
+    dockerStrategy: {}
+  output:
+    to:
+      kind: ImageStreamTag
+      name: {{ include "limesurvey.fullname" . }}-nginx:{{ .Values.openshift.tag | default "latest" | quote }}
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: {{ include "limesurvey.fullname" . }}-phpfpm
+  labels:
+    app: {{ include "limesurvey.fullname" . }}
+spec:
+  runPolicy: Serial
+  source:
+    type: Git
+    git:
+      uri: {{ .Values.openshift.sourceRepo | quote }}
+      ref: {{ default .Chart.Version .Values.openshift.sourceRef | quote }}
+    contextDir: images/phpfpm
+  strategy:
+    type: Docker
+    dockerStrategy:
+      buildArgs:
+        - name: LS_ZIP_URL
+          value: {{ .Values.openshift.lsZipUrl | default .Values.LS_ZIP_URL | quote }}
+  output:
+    to:
+      kind: ImageStreamTag
+      name: {{ include "limesurvey.fullname" . }}-phpfpm:{{ .Values.openshift.tag | default "latest" | quote }}
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+{{- end }}

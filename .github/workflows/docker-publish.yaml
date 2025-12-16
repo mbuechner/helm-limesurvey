@@ -1,0 +1,92 @@
+name: Build and Push LimeSurvey Images
+
+on:
+  push:
+    branches: [ "master" ]
+    paths:
+      - 'images/**'
+      - '.github/workflows/docker-publish.yml'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Image tag to push (default latest)'
+        required: false
+        default: 'latest'
+
+env:
+  REGISTRY: ${{ secrets.REGISTRY }}
+  TAG: ${{ github.event.inputs.tag || 'latest' }}
+
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    strategy:
+      matrix:
+        component: [ 'nginx', 'phpfpm' ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: 'v2.2.4'
+
+      - name: Log into registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Build and push nginx
+        if: matrix.component == 'nginx'
+        uses: docker/build-push-action@v6
+        id: build-nginx
+        with:
+          context: images/nginx
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository }}-nginx:${{ env.TAG }}
+            ${{ env.REGISTRY }}/${{ github.repository }}-nginx:${{ github.sha }}
+
+      - name: Sign nginx image
+        if: matrix.component == 'nginx'
+        env:
+          DIGEST: ${{ steps.build-nginx.outputs.digest }}
+          TAG_LATEST: ${{ env.REGISTRY }}/${{ github.repository }}-nginx:${{ env.TAG }}
+          TAG_SHA: ${{ env.REGISTRY }}/${{ github.repository }}-nginx:${{ github.sha }}
+        run: |
+          cosign sign --yes ${TAG_LATEST}@${DIGEST}
+          cosign sign --yes ${TAG_SHA}@${DIGEST}
+
+      - name: Build and push php-fpm
+        if: matrix.component == 'phpfpm'
+        uses: docker/build-push-action@v6
+        id: build-php
+        with:
+          context: images/phpfpm
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository }}-phpfpm:${{ env.TAG }}
+            ${{ env.REGISTRY }}/${{ github.repository }}-phpfpm:${{ github.sha }}
+
+      - name: Sign php-fpm image
+        if: matrix.component == 'phpfpm'
+        env:
+          DIGEST: ${{ steps.build-php.outputs.digest }}
+          TAG_LATEST: ${{ env.REGISTRY }}/${{ github.repository }}-phpfpm:${{ env.TAG }}
+          TAG_SHA: ${{ env.REGISTRY }}/${{ github.repository }}-phpfpm:${{ github.sha }}
+        run: |
+          cosign sign --yes ${TAG_LATEST}@${DIGEST}
+          cosign sign --yes ${TAG_SHA}@${DIGEST}

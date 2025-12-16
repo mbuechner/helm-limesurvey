@@ -1,0 +1,16 @@
+{{- /* OpenShift ImageStreams for nginx and php-fpm */ -}}
+{{- if .Values.openshift.enabled }}
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: {{ include "limesurvey.fullname" . }}-nginx
+  labels:
+    app: {{ include "limesurvey.fullname" . }}
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: {{ include "limesurvey.fullname" . }}-phpfpm
+  labels:
+    app: {{ include "limesurvey.fullname" . }}
+{{- end }}

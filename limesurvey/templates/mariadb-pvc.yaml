@@ -1,0 +1,17 @@
+{{- if and .Values.mariadb.enabled .Values.mariadb.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "limesurvey.fullname" . }}-mariadb
+spec:
+  accessModes:
+{{- range .Values.mariadb.persistence.accessModes }}
+    - {{ . | quote }}
+{{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.mariadb.persistence.size | quote }}
+  {{- if .Values.mariadb.persistence.storageClassName }}
+  storageClassName: {{ .Values.mariadb.persistence.storageClassName | quote }}
+  {{- end }}
+{{- end }}

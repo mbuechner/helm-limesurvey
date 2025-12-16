@@ -1,0 +1,201 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "limesurvey.fullname" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "limesurvey.fullname" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "limesurvey.fullname" . }}
+    spec:
+      securityContext:
+        fsGroup: {{ .Values.podSecurityContext.fsGroup }}
+        fsGroupChangePolicy: {{ .Values.podSecurityContext.fsGroupChangePolicy | quote }}
+
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: {{ include "limesurvey.fullname" . }}-nginx
+
+        # Shared webroot: wird vom initContainer mit LimeSurvey-Code befüllt
+        - name: webroot
+          emptyDir: {}
+
+        # Writable runtime dirs für RO-RootFS
+        - name: tmp
+          emptyDir: {}
+        - name: run
+          emptyDir: {}
+        - name: nginx-cache
+          emptyDir: {}
+
+        # Daten: entweder PVC (persistierend) oder emptyDir (nicht persistierend)
+        - name: data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "limesurvey.fullname" . }}-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+
+      initContainers:
+        - name: init-seed-webroot-and-config
+          image: "{{ .Values.images.php.repository }}:{{ .Values.images.php.tag }}"
+          imagePullPolicy: {{ .Values.images.php.pullPolicy }}
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+
+              # 1) Webroot seeden (für nginx + php-fpm)
+              mkdir -p /webroot
+              tar -C /var/www/html -cf - . | tar -C /webroot -xf -
+
+              # 2) Datenverzeichnisse anlegen
+              mkdir -p \
+                /data/{{ .Values.persistence.subPaths.upload }} \
+                /data/{{ .Values.persistence.subPaths.tmp }} \
+                /data/{{ .Values.persistence.subPaths.config }}
+
+              # 3) Config-Verzeichnis beim ersten Mal seeden
+              if [ ! -f "/data/{{ .Values.persistence.subPaths.config }}/config.php" ]; then
+                tar -C /var/www/html/application/config -cf - . | tar -C "/data/{{ .Values.persistence.subPaths.config }}" -xf -
+              fi
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: {{ .Values.runAsUser }}
+            runAsGroup: {{ .Values.runAsGroup }}
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: webroot
+              mountPath: /webroot
+            - name: data
+              mountPath: /data
+
+      containers:
+        - name: nginx
+          image: "{{ .Values.images.nginx.repository }}:{{ .Values.images.nginx.tag }}"
+          imagePullPolicy: {{ .Values.images.nginx.pullPolicy }}
+          ports:
+            - containerPort: 8080
+              name: http
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: {{ .Values.runAsUser }}
+            runAsGroup: {{ .Values.runAsGroup }}
+            allowPrivilegeEscalation: {{ .Values.securityContext.allowPrivilegeEscalation }}
+            readOnlyRootFilesystem: {{ .Values.securityContext.readOnlyRootFilesystem }}
+            capabilities:
+              drop: {{ toJson .Values.securityContext.capabilities.drop }}
+
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+              readOnly: true
+
+            # Webroot (Code) aus emptyDir
+            - name: webroot
+              mountPath: /var/www/html
+
+            # Persistente/writable Unterordner (überlagern Teilpfade)
+            - name: data
+              mountPath: /var/www/html/upload
+              subPath: {{ .Values.persistence.subPaths.upload }}
+            - name: data
+              mountPath: /var/www/html/tmp
+              subPath: {{ .Values.persistence.subPaths.tmp }}
+
+            # Writable runtime dirs für RO-RootFS
+            - name: tmp
+              mountPath: /tmp
+            - name: run
+              mountPath: /var/run
+            - name: nginx-cache
+              mountPath: /var/cache/nginx
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 20
+
+        - name: php-fpm
+          image: "{{ .Values.images.php.repository }}:{{ .Values.images.php.tag }}"
+          imagePullPolicy: {{ .Values.images.php.pullPolicy }}
+
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: {{ .Values.runAsUser }}
+            runAsGroup: {{ .Values.runAsGroup }}
+            allowPrivilegeEscalation: {{ .Values.securityContext.allowPrivilegeEscalation }}
+            readOnlyRootFilesystem: {{ .Values.securityContext.readOnlyRootFilesystem }}
+            capabilities:
+              drop: {{ toJson .Values.securityContext.capabilities.drop }}
+
+          env:
+            - name: DB_TYPE
+              value: "mysql"
+            - name: DB_HOST
+              value: {{ if .Values.mariadb.enabled }}{{ printf "%s-mariadb" (include "limesurvey.fullname" .) | quote }}{{ else }}{{ .Values.mariadb.host | quote }}{{ end }}
+            - name: DB_PORT
+              value: {{ if .Values.mariadb.enabled }}"3306"{{ else }}{{ .Values.mariadb.port | quote }}{{ end }}
+            - name: DB_NAME
+              value: {{ .Values.mariadb.database | quote }}
+            - name: DB_USERNAME
+              value: {{ .Values.mariadb.username | quote }}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.mariadb.existingSecret | quote }}
+                  key: {{ .Values.mariadb.passwordKey | quote }}
+
+            # Optional (Installer / initial)
+            - name: ADMIN_USER
+              value: {{ .Values.mariadb.adminUser | quote }}
+            - name: ADMIN_NAME
+              value: {{ .Values.mariadb.adminName | quote }}
+            - name: ADMIN_EMAIL
+              value: {{ .Values.mariadb.adminEmail | quote }}
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.mariadb.existingSecret | quote }}
+                  key: {{ .Values.mariadb.adminPasswordKey | quote }}
+
+          volumeMounts:
+            # Webroot (Code) aus emptyDir
+            - name: webroot
+              mountPath: /var/www/html
+
+            # Persistente/writable Unterordner
+            - name: data
+              mountPath: /var/www/html/application/config
+              subPath: {{ .Values.persistence.subPaths.config }}
+            - name: data
+              mountPath: /var/www/html/upload
+              subPath: {{ .Values.persistence.subPaths.upload }}
+            - name: data
+              mountPath: /var/www/html/tmp
+              subPath: {{ .Values.persistence.subPaths.tmp }}
+
+            # Writable runtime dirs für RO-RootFS
+            - name: tmp
+              mountPath: /tmp
+            - name: run
+              mountPath: /var/run

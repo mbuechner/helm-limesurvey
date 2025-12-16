@@ -1,0 +1,95 @@
+replicaCount: 1
+
+images:
+  nginx:
+    repository: your-registry/limesurvey-nginx
+    tag: "6"
+    pullPolicy: IfNotPresent
+  php:
+    repository: your-registry/limesurvey-phpfpm
+    tag: "6"
+    pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: limesurvey.example.org
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: [] # bewusst leer: kein SSL
+
+mariadb:
+  # Toggle to deploy an internal MariaDB (official image)
+  enabled: true
+
+  # External DB settings (used when enabled=false)
+  host: "mariadb.example.svc.cluster.local"
+  port: 3306
+  database: "limesurvey"
+  username: "limesurvey"
+  existingSecret: "limesurvey-db"
+  passwordKey: "DB_PASSWORD"
+  # optional (nur initial relevant, App-Admin in LimeSurvey)
+  adminUser: "admin"
+  adminName: "Lime Administrator"
+  adminEmail: "admin@example.org"
+  adminPasswordKey: "ADMIN_PASSWORD"
+
+  # Internal MariaDB image and persistence (used when enabled=true)
+  image:
+    repository: mariadb
+    tag: "11.8"
+    pullPolicy: IfNotPresent
+  persistence:
+    enabled: true
+    accessModes: ["ReadWriteOnce"]
+    size: 5Gi
+    storageClassName: ""
+
+secret:
+  create: true
+  DB_PASSWORD: ""
+  ADMIN_PASSWORD: ""
+
+persistence:
+  enabled: true
+  accessModes: ["ReadWriteOnce"]
+  size: 10Gi
+  storageClassName: ""
+  subPaths:
+    upload: upload
+    tmp: tmp
+    config: config
+
+podSecurityContext:
+  fsGroup: 10001
+  fsGroupChangePolicy: OnRootMismatch
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+runAsUser: 10001
+runAsGroup: 10001
+
+resources: {}
+
+openshift:
+  enabled: false
+  # Set your Git repo URL to build from
+  sourceRepo: "https://github.com/mbuechner/helm-limesurvey.git"
+  # Optional ref/branch; defaults to chart version if not set
+  sourceRef: "main"
+  # Tag used for ImageStream output (e.g., latest)
+  tag: "latest"
+  # LimeSurvey ZIP URL for PHP-FPM build
+  lsZipUrl: "https://download.limesurvey.org/latest-master/limesurvey6.16.3+251215.zip"

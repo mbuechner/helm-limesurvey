@@ -1,0 +1,46 @@
+{{- if .Values.mariadb.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "limesurvey.fullname" . }}-mariadb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "limesurvey.fullname" . }}-mariadb
+  template:
+    metadata:
+      labels:
+        app: {{ include "limesurvey.fullname" . }}-mariadb
+    spec:
+      containers:
+        - name: mariadb
+          image: "{{ .Values.mariadb.image.repository }}:{{ .Values.mariadb.image.tag }}"
+          imagePullPolicy: {{ .Values.mariadb.image.pullPolicy }}
+          ports:
+            - containerPort: 3306
+              name: mysql
+          env:
+            - name: MARIADB_DATABASE
+              value: {{ .Values.mariadb.database | quote }}
+            - name: MARIADB_USER
+              value: {{ .Values.mariadb.username | quote }}
+            - name: MARIADB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.mariadb.existingSecret | quote }}
+                  key: {{ .Values.mariadb.passwordKey | quote }}
+            - name: MARIADB_RANDOM_ROOT_PASSWORD
+              value: "yes"
+          volumeMounts:
+            {{- if .Values.mariadb.persistence.enabled }}
+            - name: mariadb-data
+              mountPath: /var/lib/mysql
+            {{- end }}
+      {{- if .Values.mariadb.persistence.enabled }}
+      volumes:
+        - name: mariadb-data
+          persistentVolumeClaim:
+            claimName: {{ include "limesurvey.fullname" . }}-mariadb
+      {{- end }}
+{{- end }}
