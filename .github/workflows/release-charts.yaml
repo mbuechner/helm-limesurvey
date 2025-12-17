@@ -10,6 +10,9 @@ on:
         description: "Optional: tag to create (e.g., limesurvey-0.1.0). If omitted, action derives from changes"
         required: false
 
+permissions:
+  contents: write
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -54,6 +57,7 @@ jobs:
           tag_name: ${{ steps.ver.outputs.TAG }}
           name: ${{ steps.ver.outputs.TAG }}
           files: dist/*.tgz
+          token: ${{ secrets.GITHUB_TOKEN }}
           draft: false
           prerelease: false
         env:
