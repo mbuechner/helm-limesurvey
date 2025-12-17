@@ -6,12 +6,12 @@ on:
     tags: [ '*' ]
     paths:
       - 'images/**'
-      - '.github/workflows/docker-publish.yaml'
+      - '.github/workflows/docker-publish.yml'
   pull_request:
     branches: [ "main" ]
     paths:
       - 'images/**'
-      - '.github/workflows/docker-publish.yaml'
+      - '.github/workflows/docker-publish.yml'
   workflow_dispatch:
     inputs:
       tag:
@@ -68,15 +68,15 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}-nginx:${{ env.TAG }}
-            ${{ env.REGISTRY }}/${{ github.repository }}-nginx:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ github.repository }}/nginx:${{ env.TAG }}
+            ${{ env.REGISTRY }}/${{ github.repository }}/nginx:${{ github.sha }}
 
       - name: Sign nginx image
         if: matrix.component == 'nginx'
         env:
           DIGEST: ${{ steps.build-nginx.outputs.digest }}
-          TAG_LATEST: ${{ env.REGISTRY }}/${{ github.repository }}-nginx:${{ env.TAG }}
-          TAG_SHA: ${{ env.REGISTRY }}/${{ github.repository }}-nginx:${{ github.sha }}
+          TAG_LATEST: ${{ env.REGISTRY }}/${{ github.repository }}/nginx:${{ env.TAG }}
+          TAG_SHA: ${{ env.REGISTRY }}/${{ github.repository }}/nginx:${{ github.sha }}
         run: |
           cosign sign --yes ${TAG_LATEST}@${DIGEST}
           cosign sign --yes ${TAG_SHA}@${DIGEST}
@@ -90,15 +90,15 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}-phpfpm:${{ env.TAG }}
-            ${{ env.REGISTRY }}/${{ github.repository }}-phpfpm:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ github.repository }}/phpfpm:${{ env.TAG }}
+            ${{ env.REGISTRY }}/${{ github.repository }}/phpfpm:${{ github.sha }}
 
       - name: Sign php-fpm image
         if: matrix.component == 'phpfpm'
         env:
           DIGEST: ${{ steps.build-php.outputs.digest }}
-          TAG_LATEST: ${{ env.REGISTRY }}/${{ github.repository }}-phpfpm:${{ env.TAG }}
-          TAG_SHA: ${{ env.REGISTRY }}/${{ github.repository }}-phpfpm:${{ github.sha }}
+          TAG_LATEST: ${{ env.REGISTRY }}/${{ github.repository }}/phpfpm:${{ env.TAG }}
+          TAG_SHA: ${{ env.REGISTRY }}/${{ github.repository }}/phpfpm:${{ github.sha }}
         run: |
           cosign sign --yes ${TAG_LATEST}@${DIGEST}
           cosign sign --yes ${TAG_SHA}@${DIGEST}
