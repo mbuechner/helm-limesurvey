@@ -1,0 +1,54 @@
+name: Publish Helm Repo to GitHub Pages
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'limesurvey/**'
+      - '.github/workflows/publish-pages.yaml'
+  workflow_dispatch:
+  release:
+    types: [ published ]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'v3.13.3'
+
+      - name: Package chart
+        run: |
+          mkdir -p dist
+          helm lint limesurvey
+          helm package limesurvey -d dist
+          helm repo index dist --url https://mbuechner.github.io/helm-limesurvey
+          ls -la dist
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
