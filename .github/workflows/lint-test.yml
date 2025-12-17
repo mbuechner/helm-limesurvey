@@ -1,6 +1,12 @@
 name: Lint and Test Charts
 
-on: pull_request
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ '*' ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
 
 permissions: {}
 

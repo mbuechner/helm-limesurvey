@@ -2,10 +2,16 @@ name: Build and Push LimeSurvey Images
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "main" ]
+    tags: [ '*' ]
     paths:
       - 'images/**'
-      - '.github/workflows/docker-publish.yml'
+      - '.github/workflows/docker-publish.yaml'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'images/**'
+      - '.github/workflows/docker-publish.yaml'
   workflow_dispatch:
     inputs:
       tag:
@@ -14,7 +20,10 @@ on:
         default: 'latest'
 
 env:
-  REGISTRY: ${{ secrets.REGISTRY }}
+  # Use docker.io for Docker Hub if empty
+  REGISTRY: ghcr.io
+  # github.repository as <account>/<repo>
+  IMAGE_NAME: ${{ github.repository }}
   TAG: ${{ github.event.inputs.tag || 'latest' }}
 
 
@@ -40,12 +49,15 @@ jobs:
         with:
           cosign-release: 'v2.2.4'
 
-      - name: Log into registry
+      # Login against a Docker registry except on PR
+      # https://github.com/docker/login-action
+      - name: Log into registry ${{ env.REGISTRY }}
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push nginx
         if: matrix.component == 'nginx'
