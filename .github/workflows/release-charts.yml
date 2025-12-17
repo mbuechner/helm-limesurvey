@@ -35,7 +35,7 @@ jobs:
           if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ github.event.inputs.release_tag }}" ]]; then
             TAG='${{ github.event.inputs.release_tag }}'
           else
-            TAG='limesurvey-'$(yq -r '.version' Chart.yaml)
+            TAG='limesurvey-'$(yq -r '.version' Chart.yml)
           fi
           echo "TAG=${TAG}" >> $GITHUB_OUTPUT
 
@@ -62,11 +62,11 @@ jobs:
       - name: Generate Helm repo index
         run: |
           helm repo index dist --url https://github.com/${{ github.repository }}/releases/download/${{ steps.ver.outputs.TAG }}
-          cp dist/index.yaml index.yaml
-          echo "Updated index.yaml to reference release ${TAG}"
+          cp dist/index.yml index.yml
+          echo "Updated index.yml to reference release ${TAG}"
 
-      - name: Commit index.yaml update
+      - name: Commit index.yml update
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Update index.yaml for ${{ steps.ver.outputs.TAG }}"
-          file_pattern: index.yaml
+          commit_message: "Update index.yml for ${{ steps.ver.outputs.TAG }}"
+          file_pattern: index.yml
