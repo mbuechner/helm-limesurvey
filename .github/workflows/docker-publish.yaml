@@ -6,12 +6,12 @@ on:
     tags: [ '*' ]
     paths:
       - 'images/**'
-      - '.github/workflows/docker-publish.yml'
+      - '.github/workflows/docker-publish.yaml'
   pull_request:
     branches: [ "main" ]
     paths:
       - 'images/**'
-      - '.github/workflows/docker-publish.yml'
+      - '.github/workflows/docker-publish.yaml'
   workflow_dispatch:
     inputs:
       tag:

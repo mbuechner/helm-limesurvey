@@ -51,7 +51,7 @@ docker push your-registry/limesurvey-nginx:6
 ```
 
 ## Configuration
-Key options from `values.yml`:
+Key options from `values.yaml`:
 - **images.nginx.repository/tag/pullPolicy**: Nginx image location.
 - **images.php.repository/tag/pullPolicy**: PHP-FPM image location.
 - **service.type/port**: Defaults to `ClusterIP` on port `8080`.
@@ -98,7 +98,7 @@ helm install limesurvey . \
 	--set images.php.tag=6 \
 	--set images.nginx.repository=your-registry/limesurvey-nginx \
 	--set images.nginx.tag=6 \
-	-f values.yml
+	-f values.yaml
 
 # Upgrade
 helm upgrade limesurvey . \
@@ -107,7 +107,7 @@ helm upgrade limesurvey . \
 	--set images.php.tag=6 \
 	--set images.nginx.repository=your-registry/limesurvey-nginx \
 	--set images.nginx.tag=6 \
-	-f values.yml
+	-f values.yaml
 ```
 
 ## Access
@@ -139,9 +139,9 @@ ingress:
 - On first run, the init container seeds `application/config` if `config.php` is missing.
 
 ## Nginx ConfigMap
-- The chart uses a ConfigMap (`templates/configmap-nginx.yml`) that mounts to `/etc/nginx/conf.d/default.conf` in the `nginx` container.
+- The chart uses a ConfigMap (`templates/configmap-nginx.yaml`) that mounts to `/etc/nginx/conf.d/default.conf` in the `nginx` container.
 - This overrides the config shipped in the image, allowing environment-specific changes without rebuilding.
-- If you prefer to use the image’s config only, remove the `nginx-conf` volume and mount from `templates/deployment.yml` and delete the ConfigMap template.
+- If you prefer to use the image’s config only, remove the `nginx-conf` volume and mount from `templates/deployment.yaml` and delete the ConfigMap template.
 
 ## Health & Probes
 - Readiness/Liveness: HTTP GET `/` on port 8080.
@@ -159,7 +159,7 @@ Values:
 Apply and trigger builds:
 ```bash
 # Render and apply OpenShift resources
-helm template limesurvey . -f values.yml --set openshift.enabled=true | oc apply -f -
+helm template limesurvey . -f values.yaml --set openshift.enabled=true | oc apply -f -
 
 # Start builds
 oc start-build limesurvey-nginx
