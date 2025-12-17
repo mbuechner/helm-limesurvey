@@ -40,12 +40,12 @@ jobs:
           echo "TAG=${TAG}" >> $GITHUB_OUTPUT
 
       - name: Helm lint
-        run: helm lint .
+        run: helm lint limesurvey
 
       - name: Package chart
         run: |
           mkdir -p dist
-          helm package . -d dist
+          helm package limesurvey -d dist
           ls -la dist
 
       - name: Create GitHub Release and upload package
@@ -63,7 +63,7 @@ jobs:
         run: |
           helm repo index dist --url https://github.com/${{ github.repository }}/releases/download/${{ steps.ver.outputs.TAG }}
           cp dist/index.yaml index.yaml
-          echo "Updated index.yaml to reference release ${TAG}"
+          echo "Updated index.yaml to reference release ${{ steps.ver.outputs.TAG }}"
 
       - name: Commit index.yaml update
         uses: stefanzweifel/git-auto-commit-action@v5
