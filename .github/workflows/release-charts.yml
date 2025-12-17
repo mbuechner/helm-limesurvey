@@ -35,7 +35,7 @@ jobs:
           if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ github.event.inputs.release_tag }}" ]]; then
             TAG='${{ github.event.inputs.release_tag }}'
           else
-            TAG='limesurvey-'$(yq -r '.version' Chart.yml)
+            TAG='limesurvey-'$(yq -r '.version' limesurvey/Chart.yml)
           fi
           echo "TAG=${TAG}" >> $GITHUB_OUTPUT
 
