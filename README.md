@@ -85,6 +85,43 @@ kubectl create secret generic limesurvey-db \
 	-n your-namespace
 ```
 
+## Helm Repository (GitHub Pages)
+A public Helm repository is published via GitHub Pages at:
+
+- URL: https://mbuechner.github.io/helm-limesurvey
+
+Add and use it with Helm:
+
+```bash
+helm repo add helm-limesurvey https://mbuechner.github.io/helm-limesurvey
+helm repo update
+
+# Optional: list available versions
+helm search repo helm-limesurvey
+
+# Install from the repo
+helm install limesurvey helm-limesurvey/limesurvey \
+	-n limesurvey --create-namespace \
+	--set images.php.repository=your-registry/limesurvey-phpfpm \
+	--set images.php.tag=6 \
+	--set images.nginx.repository=your-registry/limesurvey-nginx \
+	--set images.nginx.tag=6 \
+	-f values.yaml
+
+# Upgrade from the repo
+helm upgrade limesurvey helm-limesurvey/limesurvey \
+	-n limesurvey \
+	--set images.php.repository=your-registry/limesurvey-phpfpm \
+	--set images.php.tag=6 \
+	--set images.nginx.repository=your-registry/limesurvey-nginx \
+	--set images.nginx.tag=6 \
+	-f values.yaml
+```
+
+Notes:
+- If you enable the embedded MariaDB, ensure `mariadb.enabled=true` and provide `mariadb.existingSecret` (or allow auto-generation if supported by your configuration).
+- If you change `values.yaml` locally, pass `-f values.yaml` or `-f your-file.yaml` on install/upgrade.
+
 ## Install
 This chart lives at the repository root. The Makefile references `charts/limesurvey`, but the actual chart files are at `./`. Prefer the direct Helm commands below.
 

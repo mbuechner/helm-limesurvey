@@ -5,12 +5,12 @@ on:
     branches: [ "main" ]
     tags: [ '*' ]
     paths:
-      - 'images/**'
+      - 'docker/**'
       - '.github/workflows/docker-publish.yaml'
   pull_request:
     branches: [ "main" ]
     paths:
-      - 'images/**'
+      - 'docker/**'
       - '.github/workflows/docker-publish.yaml'
   workflow_dispatch:
     inputs:
@@ -64,7 +64,7 @@ jobs:
         uses: docker/build-push-action@v6
         id: build-nginx
         with:
-          context: images/nginx
+          context: docker/nginx
           push: true
           platforms: linux/amd64
           tags: |
@@ -86,7 +86,7 @@ jobs:
         uses: docker/build-push-action@v6
         id: build-php
         with:
-          context: images/phpfpm
+          context: docker/phpfpm
           push: true
           platforms: linux/amd64
           tags: |
