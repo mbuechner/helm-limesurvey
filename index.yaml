@@ -3,10 +3,10 @@ entries:
   limesurvey:
   - apiVersion: v2
     appVersion: "6"
-    created: "2025-12-17T15:23:18.653788397Z"
+    created: "2025-12-17T15:35:02.655365696Z"
     description: LimeSurvey (nginx + php-fpm) rootless on Kubernetes, port 8080, external
       MariaDB
-    digest: 911da50a93fd685a38c74850ba84d9a925feb65637b2b74894e17272c9992db3
+    digest: d6af6d46bc10eadd4ccb01be7bda7ea921280033aef1b9f9ce870a67bb4e0667
     icon: https://raw.githubusercontent.com/mbuechner/helm-limesurvey/main/images/Limesurvey_logo.png
     keywords:
     - limesurvey
@@ -21,4 +21,4 @@ entries:
     urls:
     - https://github.com/mbuechner/helm-limesurvey/releases/download/limesurvey-0.1.0/limesurvey-0.1.0.tgz
     version: 0.1.0
-generated: "2025-12-17T15:23:18.651730397Z"
+generated: "2025-12-17T15:35:02.654127502Z"
