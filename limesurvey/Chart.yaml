@@ -1,7 +1,7 @@
 apiVersion: v2
 name: limesurvey
 description: LimeSurvey (nginx + php-fpm) rootless on Kubernetes, port 8080, external MariaDB
-icon: https://raw.githubusercontent.com/mbuechner/helm-limesurvey/main/images/Limesurvey_logo.png
+icon: https://github.com/mbuechner/helm-limesurvey/blob/main/limesurvey/images/Limesurvey_logo.png?raw=true
 type: application
 version: 0.1.0
 appVersion: "6"
