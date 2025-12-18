@@ -1,0 +1,24 @@
+apiVersion: v1
+entries:
+  limesurvey:
+  - apiVersion: v2
+    appVersion: "6"
+    created: "2025-12-18T10:09:25.607780174Z"
+    description: LimeSurvey (nginx + php-fpm) rootless on Kubernetes, port 8080, external
+      MariaDB
+    digest: a34b00f40717152730122578f763f0fe2d41995171de1cdd68325aacb12c79b6
+    icon: https://github.com/mbuechner/helm-limesurvey/blob/main/limesurvey/images/Limesurvey_logo.png?raw=true
+    keywords:
+    - limesurvey
+    - survey
+    - php
+    - nginx
+    - mariadb
+    - kubernetes
+    - rootless
+    name: limesurvey
+    type: application
+    urls:
+    - https://mbuechner.github.io/helm-limesurvey/limesurvey-0.1.0.tgz
+    version: 0.1.0
+generated: "2025-12-18T10:09:25.606462237Z"
